@@ -13,7 +13,6 @@ def download_html(url):
         response.raise_for_status()
         return BeautifulSoup(response.text, "html.parser")
     except requests.RequestException as e:
-        print(f"[Error] Failed to fetch {url}: {e}")
         return None
 
 
@@ -25,33 +24,23 @@ def extract_content(soup):
     return text, links
 
 
-# Turn text into a list of only words, lowercased, no punctuation
-def parse_text(text):
-    text = text.lower()
-    text = text.replace(".", "")
-    text = text.replace(",", "")
-    text = text.replace("!", "")
-    text = text.replace("?", "")
-    text = text.replace("\n", " ")
-    text = text.replace("\t", " ")
-    text = text.replace("\r", " ")
-    text = text.split()
-
-    return text
-
-
-# Main function
+# Main function and downloader logic
 def main():
-    soup = download_html(start_urls[0])
-    text, links = extract_content(soup)
-    print(text)
-    for link in links:
-        print(link["href"])
-
-    print(parse_text(text))
     visited = set()
+    for url in start_urls:
+        print(f"[Downloader] Visiting {url}")
+        soup = download_html(url)
+        if soup is None:
+            print(f"[Downloader] Failed to download {url}")
+            continue
+        else:
+            print(f"[Downloader] Downloaded {url}")
+            text, links = extract_content(soup)
+            visited.add(url)
+            # TODO: Send links to gateway
+            # TODO: Send text to storage barrels
 
-    # while url_queue:
+    # TODO: Same as above, but take links from inversed index at the gateway
 
 
 if __name__ == "__main__":
