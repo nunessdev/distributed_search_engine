@@ -5,7 +5,7 @@ import index_pb2
 import index_pb2_grpc
 from google.protobuf import empty_pb2
 import threading
-
+import random
 
 class Gateway(index_pb2_grpc.IndexServicer):
     # Initialize queues and variables
@@ -14,12 +14,22 @@ class Gateway(index_pb2_grpc.IndexServicer):
         self.visited = set()
         self.lock = threading.Lock()
 
-        self.start_urls = ["https://www.python.org/"]
+        self.start_urls = []
 
         for url in self.start_urls:
             self._add_to_queue(url, 0)
 
         print("[Gateway] Started with start URLs.")
+        
+        self.barrel_stubs = []
+        self.barrel_stubs.append(
+            index_pb2_grpc.IndexStub(grpc.insecure_channel("localhost:8184"))
+        )
+        self.barrel_stubs.append(
+            index_pb2_grpc.IndexStub(grpc.insecure_channel("localhost:8185"))
+        )
+        
+        print("[Gateway] Connected to Barrels.")
 
     # Add URL to queue
     def _add_to_queue(self, url, depth):
@@ -47,13 +57,31 @@ class Gateway(index_pb2_grpc.IndexServicer):
             self._add_to_queue(url, depth)
         return empty_pb2.Empty()
 
-
+    def search(self, request, context):
+        """Forward search to a random barrel"""
+        barrel = random.choice(self.barrel_stubs)
+        try:
+            return barrel.search(request)
+        except grpc.RpcError as e:
+            print(f"[Gateway] Barrel failed, trying another...")
+            # Try the other barrel (fault tolerance!)
+            for other_barrel in self.barrel_stubs:
+                if other_barrel != barrel:
+                    try:
+                        return other_barrel.search(request)
+                    except:
+                        pass
+            # All barrels failed
+            return index_pb2.SearchResponse(urls=[])
+    
+    
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     index_pb2_grpc.add_IndexServicer_to_server(Gateway(), server)
-    server.add_insecure_port("[::]:50051")
+    server_port = 8183
+    server.add_insecure_port("0.0.0.0:{}".format(server_port))
     server.start()
-    print("[Gateway] Server started, listening on port 50051.")
+    print("[Gateway] Server started, listening on port 8183.")
     server.wait_for_termination()
 
 

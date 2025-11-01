@@ -5,8 +5,9 @@ import index_pb2
 import index_pb2_grpc
 from google.protobuf import empty_pb2
 import time
+import re
 
-# Depth serves as a stopping point for the web crawling
+# Depth serves as a stopping point for the web crawler
 MAX_DEPTH = 2
 
 # Download HTML with BeautifulSoup and return None if fails
@@ -32,10 +33,21 @@ def extract_content(soup):
 
 # Main function and downloader logic
 def main():
-    gateway_ip = "localhost:50051"
+    gateway_ip = "localhost:8183"
+    barrel1_ip = "localhost:8184"
+    barrel2_ip = "localhost:8185"
+    
     channel = grpc.insecure_channel(gateway_ip)
     stub = index_pb2_grpc.IndexStub(channel)
     print(f"[Downloader] Connected to Gateway at {gateway_ip}")
+    
+    barrel1_channel = grpc.insecure_channel(barrel1_ip)
+    barrel1_stub = index_pb2_grpc.IndexStub(barrel1_channel)
+    
+    barrel2_channel = grpc.insecure_channel(barrel2_ip)
+    barrel2_stub = index_pb2_grpc.IndexStub(barrel2_channel)
+    
+    print(f"[Downloader] Connected to 2 Barrels")
     
     try:
         try:
@@ -56,6 +68,20 @@ def main():
                     else:
                         title, text, links = extract_content(soup)
                         print(f"[Downloader] Parsed: '{title}' with {len(links)} links")
+                        
+                        # Tokenize text and send to barrel
+                        text = re.findall(r'\b[a-zA-Z]{3,}\b', text.lower())
+                        for word in text:
+                            try:
+                                barrel1_stub.addToIndex(index_pb2.AddToIndexRequest(word=word, url=url))
+                            except grpc.RpcError as e:
+                                print(f"[Downloader] Barrel1 failed: {e}")
+                                
+                            try:
+                                barrel2_stub.addToIndex(index_pb2.AddToIndexRequest(word=word, url=url))
+                            except grpc.RpcError as e:
+                                print(f"[Downloader] Barrel2 failed: {e}")              
+                        
                         
                         if len(links) > 0 and depth < MAX_DEPTH: # only add links if there are links and max depth hasn't been reached
                             for link in links:
