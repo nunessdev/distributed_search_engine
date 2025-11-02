@@ -68,6 +68,7 @@ def main():
                     else:
                         title, text, links = extract_content(soup)
                         print(f"[Downloader] Parsed: '{title}' with {len(links)} links")
+                        snippet = text[:200]
                         
                         # Tokenize text and send to barrel
                         text = re.findall(r'\b[a-zA-Z]{3,}\b', text.lower())
@@ -80,13 +81,24 @@ def main():
                             try:
                                 barrel2_stub.addToIndex(index_pb2.AddToIndexRequest(word=word, url=url))
                             except grpc.RpcError as e:
-                                print(f"[Downloader] Barrel2 failed: {e}")              
+                                print(f"[Downloader] Barrel2 failed: {e}")
                         
-                        
-                        if len(links) > 0 and depth < MAX_DEPTH: # only add links if there are links and max depth hasn't been reached
+                        # Only add links if there are links and max depth hasn't been reached
+                        if len(links) > 0 and depth < MAX_DEPTH:
                             for link in links:
                                 stub.putNew(index_pb2.PutNewRequest(url=link, depth = depth + 1))
+                                # Also add link tracking
+                                barrel1_stub.addLinkTracking(index_pb2.addLinkTrackingRequest(prev_url=url, curr_url=link))
+                                barrel2_stub.addLinkTracking(index_pb2.addLinkTrackingRequest(prev_url=url, curr_url=link))
                             print(f"[Downloaders] Added links with depth {depth + 1}")
+                            
+                        # Also send metadata
+                        title = str(title)
+                        snippet = str(snippet)
+                        url = str(url)
+                        
+                        barrel1_stub.addPageMeta(index_pb2.AddPageMetaRequest(url=url, title=title, snippet=snippet))
+                        barrel2_stub.addPageMeta(index_pb2.AddPageMetaRequest(url=url, title=title, snippet=snippet))
             
         except grpc.RpcError as e:
             print(f"[Downloader] RPC failed: {e.code()}")

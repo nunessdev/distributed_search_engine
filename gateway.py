@@ -57,14 +57,14 @@ class Gateway(index_pb2_grpc.IndexServicer):
             self._add_to_queue(url, depth)
         return empty_pb2.Empty()
 
+    # RPC: Client calls this to make a search
     def search(self, request, context):
-        """Forward search to a random barrel"""
         barrel = random.choice(self.barrel_stubs)
         try:
             return barrel.search(request)
         except grpc.RpcError as e:
             print(f"[Gateway] Barrel failed, trying another...")
-            # Try the other barrel (fault tolerance!)
+            # Try the other barrel 
             for other_barrel in self.barrel_stubs:
                 if other_barrel != barrel:
                     try:
@@ -72,7 +72,24 @@ class Gateway(index_pb2_grpc.IndexServicer):
                     except:
                         pass
             # All barrels failed
-            return index_pb2.SearchResponse(urls=[])
+            return index_pb2.SearchResponse(results=[])
+    
+    # RPC: Client calls to get pages that link to a search result (basically the same as above)
+    def getIncomingLinks(self, request, context):
+        barrel = random.choice(self.barrel_stubs)
+        try:
+            return barrel.getIncomingLinks(request)
+        except grpc.RpcError as e:
+            print(f"[Gateway] Barrel failed, trying another...")
+            # Try the other barrel
+            for other_barrel in self.barrel_stubs:
+                if other_barrel != barrel:
+                    try:
+                        return other_barrel.getIncomingLinks(request)
+                    except:
+                        pass
+            # All barrels failed
+            return index_pb2.GetIncomingLinksResponse(links=[])
     
     
 def serve():
