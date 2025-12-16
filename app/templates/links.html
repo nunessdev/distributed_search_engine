@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Incoming Links - Googol</title>
+</head>
+<body>
+    <h1>Incoming Links</h1>
+    
+    <div class="page-info">
+        <p><strong>Page:</strong></p>
+        <div class="page-url">{{ target_url }}</div>
+    </div>
+
+    {% if total_links > 0 %}
+    <p>Found {{ total_links }} page(s) linking to this URL:</p>
+    
+    {% for link in links %}
+    <div class="link-item">
+        <a href="{{ link }}" class="link-url" target="_blank">{{ link }}</a>
+    </div>
+    {% endfor %}
+    
+    {% else %}
+    <p>No pages link to this URL.</p>
+    {% endif %}
+    
+</body>
+</html>

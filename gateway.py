@@ -7,6 +7,10 @@ from google.protobuf import empty_pb2
 import threading
 import random
 
+barrel1_ip = "0.0.0.0:8184"
+barrel2_ip = "0.0.0.0:8185"
+gateway_ip = "0.0.0.0:8183"
+
 class Gateway(index_pb2_grpc.IndexServicer):
     # Initialize queues and variables
     def __init__(self):
@@ -22,12 +26,8 @@ class Gateway(index_pb2_grpc.IndexServicer):
         print("[Gateway] Started with start URLs.")
         
         self.barrel_stubs = []
-        self.barrel_stubs.append(
-            index_pb2_grpc.IndexStub(grpc.insecure_channel("localhost:8184"))
-        )
-        self.barrel_stubs.append(
-            index_pb2_grpc.IndexStub(grpc.insecure_channel("localhost:8185"))
-        )
+        self.barrel_stubs.append(index_pb2_grpc.IndexStub(grpc.insecure_channel(barrel1_ip)))
+        self.barrel_stubs.append(index_pb2_grpc.IndexStub(grpc.insecure_channel(barrel2_ip)))
         
         print("[Gateway] Connected to Barrels.")
 
@@ -95,8 +95,7 @@ class Gateway(index_pb2_grpc.IndexServicer):
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     index_pb2_grpc.add_IndexServicer_to_server(Gateway(), server)
-    server_port = 8183
-    server.add_insecure_port("0.0.0.0:{}".format(server_port))
+    server.add_insecure_port("{}".format(gateway_ip))
     server.start()
     print("[Gateway] Server started, listening on port 8183.")
     server.wait_for_termination()

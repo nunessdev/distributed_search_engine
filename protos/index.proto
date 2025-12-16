@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package search;
+
+import "google/protobuf/empty.proto";
+
+// Index service definition
+service Index {
+    rpc takeNext (google.protobuf.Empty) returns (TakeNextResponse);
+    rpc putNew (PutNewRequest) returns (google.protobuf.Empty);
+    rpc addToIndex (AddToIndexRequest) returns (google.protobuf.Empty);
+    rpc search (SearchRequest) returns (SearchResponse);
+    rpc addLinkTracking (addLinkTrackingRequest) returns (google.protobuf.Empty);
+    rpc addPageMeta (AddPageMetaRequest) returns (google.protobuf.Empty);
+    rpc getIncomingLinks (GetIncomingLinksRequest) returns (GetIncomingLinksResponse);
+}
+
+message PutNewRequest {
+    string url = 1;
+    int32 depth = 2;
+}
+
+message AddToIndexRequest {
+    string word = 1;
+    string url = 2;
+}
+
+message SearchRequest {
+    repeated string terms = 1;
+    int32 page = 2;
+    int32 page_size = 3;
+}
+
+message SearchResult {
+    string url = 1;
+    string title = 2;
+    string snippet = 3;
+}
+
+message SearchResponse {
+    repeated SearchResult results = 1;
+    int32 total_results = 2;
+}
+
+message TakeNextResponse {
+    string url = 1;
+    int32 depth = 2;
+}
+
+message addLinkTrackingRequest {
+    string prev_url = 1;
+    string curr_url = 2;
+}
+
+message AddPageMetaRequest {
+    string url = 1;
+    string title = 2;
+    string snippet = 3;
+}
+
+message GetIncomingLinksRequest {
+    string url = 1;
+}
+
+message GetIncomingLinksResponse {
+    repeated string links = 1;
+}

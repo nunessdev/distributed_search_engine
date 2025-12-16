@@ -33,14 +33,16 @@ def extract_content(soup):
 
 # Main function and downloader logic
 def main():
-    gateway_ip = "localhost:8183"
-    barrel1_ip = "localhost:8184"
-    barrel2_ip = "localhost:8185"
+    gateway_ip = "0.0.0.0:8183"
+    barrel1_ip = "0.0.0.0:8184"
+    barrel2_ip = "0.0.0.0:8185"
     
+    # Connect to Gateway
     channel = grpc.insecure_channel(gateway_ip)
     stub = index_pb2_grpc.IndexStub(channel)
     print(f"[Downloader] Connected to Gateway at {gateway_ip}")
     
+    # Connect to Barrels
     barrel1_channel = grpc.insecure_channel(barrel1_ip)
     barrel1_stub = index_pb2_grpc.IndexStub(barrel1_channel)
     
@@ -52,6 +54,7 @@ def main():
     try:
         try:
             while True:
+                # Takes URL from Queue
                 response = stub.takeNext(empty_pb2.Empty())
                 url = response.url
                 depth = response.depth

@@ -72,7 +72,7 @@ class Barrel(index_pb2_grpc.IndexServicer):
         except Exception as e:
             print(f"[{self.name}] Failed to save metadata: {e}")
         
-        
+    # RPC: Downloader calls to add token and url to index
     def addToIndex(self, request, context):
         word, url = request.word, request.url
         with self.lock:
@@ -83,6 +83,7 @@ class Barrel(index_pb2_grpc.IndexServicer):
             print(f"[{self.name}] Added ({word} -> {url})")
         return empty_pb2.Empty()
     
+    # RPC: Donwloader calls to add pages that link to an url
     def addLinkTracking(self, request, context):
         with self.lock:
             prev_url = request.prev_url
@@ -95,6 +96,7 @@ class Barrel(index_pb2_grpc.IndexServicer):
     
         return empty_pb2.Empty()
     
+    # RPC: Donwloader calls to add metadata (text and snippet)
     def addPageMeta(self, request, context):
         url = request.url
         title = request.title
@@ -106,6 +108,7 @@ class Barrel(index_pb2_grpc.IndexServicer):
             print(f"[{self.name}] Stored metadata for {url}")
         return empty_pb2.Empty()
     
+    # RPC: Gateway calls this, returns pages that link to a specific URL
     def getIncomingLinks(self, request, context):
         url = request.url
         with self.lock:
@@ -113,8 +116,13 @@ class Barrel(index_pb2_grpc.IndexServicer):
             links = list(incoming)
         return index_pb2.GetIncomingLinksResponse(links=links)
     
+    # RPC: Gateway calls this, returns search results order by relevance
     def search(self, request, context):
         terms = request.terms
+        page = request.page if request.page > 0 else 1
+        page_size = request.page_size if request.page_size > 0 else 10
+        
+        print(f"[{self.name}] Search request: terms={terms}, page={page}, page_size={page_size}")
         
         with self.lock:
             # Find URLs
@@ -123,18 +131,22 @@ class Barrel(index_pb2_grpc.IndexServicer):
             for term in terms:
                 if term in self.index:
                     urls_with_term = self.index[term]
+                    print(f"[{self.name}] Found {len(urls_with_term)} URLs for term '{term}'")
                     if result_urls is None:
                         result_urls = urls_with_term.copy()
                     else:
-                        # Only URLs that have ALL terms
                         result_urls = result_urls.intersection(urls_with_term)
                 else:
-                    return index_pb2.SearchResponse(results=[])
+                    print(f"[{self.name}] Term '{term}' not found in index")
+                    return index_pb2.SearchResponse(results=[], total_results=0)
             
             if result_urls is None:
-                return index_pb2.SearchResponse(results=[])
+                print(f"[{self.name}] No result URLs found")
+                return index_pb2.SearchResponse(results=[], total_results=0)
             
-            # Sort by link with the most previous links
+            print(f"[{self.name}] Total matching URLs: {len(result_urls)}")
+            
+            # Sort by links
             url_scores = []
             for url in result_urls:
                 num_incoming = len(self.incoming_links.get(url, set()))
@@ -152,14 +164,26 @@ class Barrel(index_pb2_grpc.IndexServicer):
                     snippet=meta["snippet"]
                 )
                 results.append(result)
+            
+            total_results = len(results)
+            
+            # Slice for pagination
+            start_idx = (page - 1) * page_size
+            end_idx = start_idx + page_size
+            paginated_results = results[start_idx:end_idx]
+            
+            print(f"[{self.name}] Returning {len(paginated_results)} results (total: {total_results})")
         
-        return index_pb2.SearchResponse(results=list(results))
+        return index_pb2.SearchResponse(
+            results=paginated_results,
+            total_results=total_results
+        )
 
 def serve(name, port):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     barrel = Barrel(name)
     index_pb2_grpc.add_IndexServicer_to_server(barrel, server)
-    server.add_insecure_port(f"[::]:{port}")
+    server.add_insecure_port(f"0.0.0.0:{port}")
     server.start()
     print(f"[{name}] Listening on port {port}")
     server.wait_for_termination()

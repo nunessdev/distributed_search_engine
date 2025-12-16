@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Googol Indexing</title>
+</head>
+<body>
+    <h1>Add an URL to Googol</h1>
+    
+    <p>Enter the URL you wish to index below:</p>
+    
+    <form method="post" action="/index">
+        <input type="url" name="url" required placeholder="https://example.com" style="width:400px;">
+        <button type="submit">Submit</button>
+    </form>
+
+    {% if message %}
+    <p style="color: green;">{{ message }}</p>
+    {% endif %}
+    
+    {% if error %}
+    <p style="color: red;">Error: {{ error }}</p>
+    {% endif %}
+
+    <li><a href="/">Homepage</a></li>
+</body>
+</html>

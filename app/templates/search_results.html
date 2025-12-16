@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search Results - Googol</title>
+    <style>
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Googol Search</h1>
+    
+    <!-- Search box to do another search -->
+    <form method="post" action="/search">
+        <input type="text" name="query" value="{{ query }}" required placeholder="Enter search terms" style="width:400px;">
+        <button type="submit">Search</button>
+    </form>
+
+    <div>
+        <h3 style=" color: #3be563;">AI Summary</h3>
+        <p>{{ ai_summary }}</p>
+    </div>
+
+    {% if total_results > 0 %}
+    <p>Found {{ total_results }} results (Page {{ current_page }} of {{ total_pages }})</p>
+
+    <!-- Results -->
+    {% for result in results %}
+    <div class="result">
+        <a href="{{ result.url }}" class="result-title" target="_blank">{{ result.title }}</a>
+        <div class="result-url">{{ result.url }}</div>
+        <div class="result-snippet">{{ result.snippet }}</div>
+        <div>
+            <form method="post" action="/links" style="display: inline;" target="_blank">
+                <input type="hidden" name="url" value="{{ result.url }}">
+                <button type="submit" class="link"> View URLs that link to this page </button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Pagination -->
+    <div class="pagination">
+        <form method="post" action="/search" style="display: inline;">
+            <input type="hidden" name="query" value="{{ query }}">
+            <input type="hidden" name="page" value="{{ current_page - 1 }}">
+            <button type="submit" {% if current_page <= 1 %}disabled{% endif %}>Previous</button>
+        </form>
+
+        <span>Page {{ current_page }} of {{ total_pages }}</span>
+
+        <form method="post" action="/search" style="display: inline;">
+            <input type="hidden" name="query" value="{{ query }}">
+            <input type="hidden" name="page" value="{{ current_page + 1 }}">
+            <button type="submit" {% if current_page >= total_pages %}disabled{% endif %}>Next</button>
+        </form>
+    </div>
+
+    {% elif query %}
+    <p>No results found for "{{ query }}"</p>
+    {% endif %}
+
+    <li><a href="/">Homepage</a></li>
+</body>
+</html>
