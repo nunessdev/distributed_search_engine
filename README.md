@@ -45,14 +45,14 @@ On the first page of a search, an AI-generated summary of the search terms is sh
 1. Clone the repo.
 2. Install Python dependencies — a virtual environment is recommended: `pip install -r requirements.txt`
 3. Generate the gRPC code from the `.proto` file: run `protos/generate-gRPC-code.sh`
-4. Update IPs as needed (see table below) — all default to `localhost`. Ports are also hardcoded, except for the Barrels.
+4. Update IPs as needed (see table below), all default to `localhost`. Ports are also hardcoded, except for the Barrels.
 5. Install Ollama and pull the model used for AI summaries:
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
 ollama pull tinyllama
 # Or bring your own model, just update the name in routes.py
 ```
-   The model will then be ready to receive requests at `localhost:11434`.
+The model will then be ready to receive requests at `localhost:11434`.
 
 ### Running
 Start the components in this order (works the same whether testing on one machine or two, as long as IPs are configured correctly):
