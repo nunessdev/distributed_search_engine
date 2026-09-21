@@ -43,7 +43,7 @@ On the first page of a search, an AI-generated summary of the search terms is sh
 
 ### Setup
 1. Clone the repo.
-2. Install Python dependencies — a virtual environment is recommended: `pip install -r requirements.txt`
+2. Install Python dependencies, a virtual environment is recommended: `pip install -r requirements.txt`
 3. Generate the gRPC code from the `.proto` file: run `protos/generate-gRPC-code.sh`
 4. Update IPs as needed (see table below), all default to `localhost`. Ports are also hardcoded, except for the Barrels.
 5. Install Ollama and pull the model used for AI summaries:
