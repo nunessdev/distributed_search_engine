@@ -5,20 +5,34 @@ Googol is a distributed search engine where components communicate through RPC c
 There are five main components in the system's backend:
 
 ![Arquitecture](./arquitetura.png)
-### URL Queue
+#### URL Queue
 The URL Queue is a data structure that tracks URLs waiting to be indexed. It's implemented inside the Gateway, so both Clients and Downloaders can add URLs through the same RPC endpoint. Clients use it when submitting a URL manually, and Downloaders when they discover new links while crawling the web pages.
 
 
-### Gateway
+#### Gateway
 The Gateway exposes the URL Queue via two RPC methods: `putNew()`, used by both Clients and Downloaders to add a URL to be indexed, and `takeNext()`, used by the Downloaders to pull the next URL to crawl. It also serves as the entry point for the clients, `search()` returns ranked results for a set of search terms, and `getIncomingLinks()` returns pages linking to a given URL.
 
-### Client
+#### Client
 The Client is the program a user interacts with directly and it invokes RPC calls on the Gateway. Users can index new URLs, perform searches, look through the results with pagination and look up which pages link to a given result.
 
-### Downloaders
+#### Downloaders
 Downloaders handle web crawling. Each Downloader takes a new URL from the Queue using `takeNext()`, downloads, parses and tokenizes its text, keeping only words with 3 or more characters. Each word is sent to every Storage Barrel via `addToIndex()` adding it to the inverted index alongside the URL. Title and text snippet are then sent separately via `addPageMeta()`. New URLs found are sent back to the Gateway to be queued for crawling, up to a maximum depth. Each link is also sent to the Storage Barrels with `addLinkTracking()` which saves it to a link dictionary that keeps track of incoming links between pages.
 
-### Storage Barrels
+#### Storage Barrels
 Barrels act as the system's storage and handle search requests from the Gateway. They receive data from the Downloaders and index it into their data structures. Each Barrel saves its data to disk using `pickle`, avoiding data loss if it goes down. When a restart occurs, each Barrel tries to reload its own files.
 Barrels expose three RPC methods used by the Downloaders and two for the Gateway, as mentioned in each of these components descriptions.
 When the Gateway calls `search()`, the Barrel returns results ranked by number of incoming links, and metadata (title and text preview) for each result. Search results are paginated server-side, the caller specifies a page and page size, and the Barrel returns only that slice along with the total result count.
+
+## Frontend
+There is an alternative to the CLI Client implemented using a FaspAPI application and Jinja2 to render pages for indexing URLs, searching and viewing incoming links for a result. `rpc_client.py` functions like a bridge between web routes and the Gateway, wrapping each RPC call (`putNew()`, `search()`, `getIncomingLinks()`) so that `routes.py` doesn't call gRPC directly.
+
+### Routes
+| Route     | Method     | Purpose                                 |
+|-----------|------------|-----------------------------------------|
+| `/`       | GET        | Home page                               |
+| `/search` | GET / POST | Search page / run a search              |
+| `/index`  | GET / POST | Indexing page / submit a URL            |
+| `/links`  | POST       | Show pages linking to a given URL       |
+
+### AI Overview
+On the first page of a search, an AI-generated summary of the search terms is shown on above the results. For this I used a local AI model, specifically `tinyllama` through Ollama's HTTP API. The summary is only generated on the first page to avoid redundant calls when paging through results.
