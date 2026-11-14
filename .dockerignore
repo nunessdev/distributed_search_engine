@@ -1,0 +1,7 @@
+.venv
+.git
+__pycache__
+*.pyc
+*.pkl
+index_pb2.py
+index_pb2_grpc.py

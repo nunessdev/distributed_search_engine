@@ -1,0 +1,62 @@
+services:
+  barrel_1:
+    build: .
+    image: googol
+    command: python storage_barrel.py barrel_1 8184
+    environment:
+      DATA_DIR: /data
+    volumes:
+      - barrel_1_data:/data
+
+  barrel_2:
+    build: .
+    image: googol
+    command: python storage_barrel.py barrel_2 8185
+    environment:
+      DATA_DIR: /data
+    volumes:
+      - barrel_2_data:/data
+
+  gateway:
+    build: .
+    image: googol
+    command: python gateway.py
+    environment:
+      BARREL_1_ADDR: barrel_1:8184
+      BARREL_2_ADDR: barrel_2:8185
+
+  downloader:
+    build: .
+    image: googol
+    command: python downloader.py
+    environment:
+      BARREL_1_ADDR: barrel_1:8184
+      BARREL_2_ADDR: barrel_2:8185
+      GATEWAY_ADDR: gateway:8183
+    depends_on:
+      - gateway
+    restart: on-failure
+    deploy:
+      replicas: 2
+  
+  web:
+    build: .
+    image: googol
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8080
+    ports:
+      - "8080:8080"
+    environment:
+      GATEWAY_ADDR: gateway:8183
+      OLLAMA_URL: http://ollama:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  ollama:
+    image: ollama/ollama
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  barrel_1_data:
+  barrel_2_data:
+  ollama_data:
