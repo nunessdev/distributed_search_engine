@@ -7,12 +7,15 @@ import threading
 import pickle
 import os
 
+DATA_DIR = os.environ.get("DATA_DIR", ".")
+
 class Barrel(index_pb2_grpc.IndexServicer):
     def __init__(self, name):
         self.name = name
-        self.filename = f"{name}_index.pkl"
-        self.link_file = f"{name}_links.pkl"
-        self.meta_file = f"{name}_meta.pkl"
+        os.makedirs(DATA_DIR, exist_ok=True)
+        self.filename = os.path.join(DATA_DIR, f"{name}_index.pkl")
+        self.link_file = os.path.join(DATA_DIR, f"{name}_links.pkl")
+        self.meta_file = os.path.join(DATA_DIR, f"{name}_meta.pkl")
         self.index = {}
         self.incoming_links = {}
         self.page_meta = {}

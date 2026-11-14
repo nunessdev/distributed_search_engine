@@ -6,6 +6,11 @@ import index_pb2_grpc
 from google.protobuf import empty_pb2
 import time
 import re
+import os
+
+GATEWAY_ADDR = os.environ.get("GATEWAY_ADDR", "0.0.0.0:8183")
+BARREL_1_ADDR = os.environ.get("BARREL_1_ADDR", "0.0.0.0:8184")
+BARREL_2_ADDR = os.environ.get("BARREL_2_ADDR", "0.0.0.0:8185")
 
 # Depth serves as a stopping point for the web crawler
 MAX_DEPTH = 2
@@ -33,20 +38,17 @@ def extract_content(soup):
 
 # Main function and downloader logic
 def main():
-    gateway_ip = "0.0.0.0:8183"
-    barrel1_ip = "0.0.0.0:8184"
-    barrel2_ip = "0.0.0.0:8185"
     
     # Connect to Gateway
-    channel = grpc.insecure_channel(gateway_ip)
+    channel = grpc.insecure_channel(GATEWAY_ADDR)
     stub = index_pb2_grpc.IndexStub(channel)
-    print(f"[Downloader] Connected to Gateway at {gateway_ip}")
+    print(f"[Downloader] Connected to Gateway at {GATEWAY_ADDR}")
     
     # Connect to Barrels
-    barrel1_channel = grpc.insecure_channel(barrel1_ip)
+    barrel1_channel = grpc.insecure_channel(BARREL_1_ADDR)
     barrel1_stub = index_pb2_grpc.IndexStub(barrel1_channel)
     
-    barrel2_channel = grpc.insecure_channel(barrel2_ip)
+    barrel2_channel = grpc.insecure_channel(BARREL_2_ADDR)
     barrel2_stub = index_pb2_grpc.IndexStub(barrel2_channel)
     
     print(f"[Downloader] Connected to 2 Barrels")

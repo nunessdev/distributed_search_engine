@@ -1,10 +1,11 @@
 import grpc
 import index_pb2
 import index_pb2_grpc
+import os
 
 # Connect to gateway at startup
-GATEWAY = "localhost:8183"
-channel = grpc.insecure_channel(GATEWAY)
+GATEWAY_ADDR = os.environ.get("GATEWAY_ADDR", "0.0.0.0:8183")
+channel = grpc.insecure_channel(GATEWAY_ADDR)
 stub = index_pb2_grpc.IndexStub(channel)
 
 def put_new_url(url: str, depth: int = 0):

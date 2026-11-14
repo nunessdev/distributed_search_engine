@@ -1,10 +1,11 @@
 import grpc
 import index_pb2
 import index_pb2_grpc
+import os
 
 def main():
-    gateway_ip = "0.0.0.0:8183"
-    channel = grpc.insecure_channel(gateway_ip)
+    GATEWAY_ADDR = os.environ.get("GATEWAY_ADDR", "0.0.0.0:8183")
+    channel = grpc.insecure_channel(GATEWAY_ADDR)
     stub = index_pb2_grpc.IndexStub(channel)
     
     print("Welcome to Googol!")

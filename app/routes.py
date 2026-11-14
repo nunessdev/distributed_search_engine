@@ -2,15 +2,15 @@ from fastapi import APIRouter, Request, Form
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
-
 from app.rpc_client import put_new_url, search_terms, get_incoming_links
-
 import requests
+import os
 
-# Used local tinyllama model
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+
 def generate_ai_summary(search_terms):
     response = requests.post(
-        "http://localhost:11434/api/generate",
+        f"{OLLAMA_URL}/api/generate",
         json={
             "model": "tinyllama",
             "prompt": f"Provide a brief summary about: {', '.join(search_terms)}",

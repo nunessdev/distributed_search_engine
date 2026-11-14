@@ -6,10 +6,12 @@ import index_pb2_grpc
 from google.protobuf import empty_pb2
 import threading
 import random
+import os
 
-barrel1_ip = "0.0.0.0:8184"
-barrel2_ip = "0.0.0.0:8185"
 gateway_ip = "0.0.0.0:8183"
+
+BARREL_1_ADDR = os.environ.get("BARREL_1_ADDR", "0.0.0.0:8184")
+BARREL_2_ADDR = os.environ.get("BARREL_2_ADDR", "0.0.0.0:8185")
 
 class Gateway(index_pb2_grpc.IndexServicer):
     # Initialize queues and variables
@@ -26,8 +28,8 @@ class Gateway(index_pb2_grpc.IndexServicer):
         print("[Gateway] Started with start URLs.")
         
         self.barrel_stubs = []
-        self.barrel_stubs.append(index_pb2_grpc.IndexStub(grpc.insecure_channel(barrel1_ip)))
-        self.barrel_stubs.append(index_pb2_grpc.IndexStub(grpc.insecure_channel(barrel2_ip)))
+        self.barrel_stubs.append(index_pb2_grpc.IndexStub(grpc.insecure_channel(BARREL_1_ADDR)))
+        self.barrel_stubs.append(index_pb2_grpc.IndexStub(grpc.insecure_channel(BARREL_2_ADDR)))
         
         print("[Gateway] Connected to Barrels.")
 
